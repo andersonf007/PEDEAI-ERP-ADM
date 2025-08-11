@@ -6,6 +6,9 @@ import 'dart:convert';
 
 import 'package:pedeaierpadm/controller/authService.dart';
 import 'package:pedeaierpadm/controller/databaseService.dart';
+import 'package:pedeaierpadm/controller/empresaController.dart';
+import 'package:pedeaierpadm/controller/usuarioController.dart';
+import 'package:pedeaierpadm/script/script.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -20,7 +23,9 @@ class _HomePageState extends State<HomePage> {
 
   final AuthService _authService = AuthService();
   final DatabaseService _databaseService = DatabaseService();
-
+  final Script _script = Script();
+  Empresacontroller empresacontroller = Empresacontroller();
+  Usuariocontroller usuariocontroller = Usuariocontroller();
   final _cnpjCpfController = TextEditingController();
   final _nomeController = TextEditingController();
   final _fantasiaController = TextEditingController();
@@ -113,7 +118,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       // Verificar se a empresa já existe no banco
-      final empresaExistente = await _buscarEmpresaNoBanco(cnpjLimpo);
+      final empresaExistente = await empresacontroller.buscarEmpresaNoBanco(cnpjLimpo, _schemaEmpresa!);
 
       if (empresaExistente != null) {
         _preencherDadosEmpresa(empresaExistente);
@@ -151,20 +156,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  // Buscar empresa no banco de dados
-  Future<Map<String, dynamic>?> _buscarEmpresaNoBanco(String cnpj) async {
-    try {
-      // Buscar dados da empresa usando o método executeSql
-      final sql = "SELECT * FROM {schema}.empresa WHERE cnpj = '$cnpj' LIMIT 1;";
-      final resultado = await _databaseService.executeSql(sql, params: {'cnpj': cnpj}, schema: _schemaEmpresa ?? 'empresa_$cnpj');
-
-      return resultado.isNotEmpty ? resultado.first : null;
-    } catch (e) {
-      print('Erro ao buscar empresa no banco: $e');
-      return null;
     }
   }
 
@@ -245,7 +236,7 @@ class _HomePageState extends State<HomePage> {
 
       // Verificar se empresa já existe (apenas para CNPJ)
       if (!_isCPF) {
-        final empresaExistente = await _buscarEmpresaNoBanco(documentoLimpo);
+        final empresaExistente = await empresacontroller.buscarEmpresaNoBanco(documentoLimpo, _schemaEmpresa!);
         if (empresaExistente?['id'] != null) {
           _mostrarMensagem('Essa empresa já existe!', Colors.orange);
           return;
@@ -258,58 +249,39 @@ class _HomePageState extends State<HomePage> {
         _mostrarMensagem('Esse usuário já existe!', Colors.orange);
         return;
       }*/
-      final emailExists = await _authService.emailJaExiste(_emailUsuarioController.text);
-      if (emailExists) {
-        _mostrarMensagem('Esse usuário já existe!', Colors.orange);
-        return;
+      final emailExists = await usuariocontroller.verificarEmailSeExiste(_emailUsuarioController.text);
+      if (emailExists != null) {
+        uidUsuarioCadastrado = emailExists;
+      } else {
+        final response2 = await usuariocontroller.cadastrarUsuario(_emailUsuarioController.text, _senhaController.text);
+        if (response2.user == null) {
+          _mostrarMensagem('Erro ao cadastrar usuário', Colors.red);
+          return;
+        }
+        uidUsuarioCadastrado = response2.user!.id;
       }
-      final response2 = await _authService.signUp(email: _emailUsuarioController.text, password: _senhaController.text);
-      if (response2.user == null) {
-        _mostrarMensagem('Erro ao cadastrar usuário', Colors.red);
-        return;
-      }
-      uidUsuarioCadastrado = response2.user!.id;
 
-      final sqlEmpresa =
-          '''INSERT INTO ${_schemaEmpresa}.empresa 
-            (cnpj, razao, fantasia, cep, logradouro, numero, bairro, municipio, uf, telefone, email, schema) 
-            VALUES (
-              '${documentoLimpo}',
-              '${_nomeController.text}',
-              '${_fantasiaController.text}',
-              '${_cepController.text}',
-              '${_logradouroController.text}',
-              '${_numeroController.text}',
-              '${_bairroController.text}',
-              '${_municipioController.text}',
-              '${_ufController.text}',
-              '${_telefoneController.text}',
-              '${_emailEmpresaController.text}',
-              '${_schemaController.text}'
-            ) RETURNING id;''';
+      empresacontroller.inserirEmpresa(_schemaEmpresa!, {
+        'cnpj': documentoLimpo,
+        'razao': _nomeController.text.trim(),
+        'fantasia': _fantasiaController.text.trim(),
+        'cep': _cepController.text.trim(),
+        'logradouro': _logradouroController.text.trim(),
+        'numero': _numeroController.text.trim(),
+        'bairro': _bairroController.text.trim(),
+        'municipio': _municipioController.text.trim(),
+        'uf': _ufController.text.trim(),
+        'telefone': _telefoneController.text.trim(),
+        'email': _emailEmpresaController.text.trim(),
+        'schema': _schemaEmpresa!,
+      });
 
-      var response = await _databaseService.executeSql(sqlEmpresa, schema: _schemaEmpresa!);
-      /*if (response.isEmpty || response.first['id'] == null) {
-        _mostrarMensagem('Erro ao salvar empresa', Colors.red);
-        return;
-      }*/
       // Inserir usuário admin da empresa
-      final sqlUsuario =
-          '''INSERT INTO {schema}.usuario (nome, email, uid, is_admin)
-            VALUES (
-              '${_nomeUsuarioController.text}',
-              '${_emailUsuarioController.text}',
-              '${_authService.currentUser?.id}',
-              true
-            ) RETURNING id;'''
-              .replaceAll("{schema}", _schemaEmpresa!);
-
-      await _databaseService.executeSql(sqlUsuario, schema: _schemaEmpresa!);
-
+      usuariocontroller.inserirUsuario(_schemaEmpresa!, {'nome': _nomeUsuarioController.text.trim(), 'email': _emailUsuarioController.text.trim(), 'uid': uidUsuarioCadastrado, 'is_admin': true});
       _mostrarMensagem('Dados salvos com sucesso!', Colors.green);
       _limparDados();
     } catch (e) {
-      await _authService.deletarUsuario(uidUsuarioCadastrado);
+      // await _authService.deletarUsuario(uidUsuarioCadastrado);
       _mostrarMensagem('Erro ao salvar dados: ${e.toString()}', Colors.red);
     } finally {
       setState(() {

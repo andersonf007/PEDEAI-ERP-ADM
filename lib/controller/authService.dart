@@ -88,14 +88,22 @@ class AuthService {
   }
 
   // No seu AuthService, adicione este método:
-  Future<bool> emailJaExiste(String email) async {
-    try {
-      final response = await _client.auth.admin.listUsers();
-      return response.any((user) => user.email == email);
-    } catch (e) {
-      return false;
+Future<String?> emailJaExiste(String email) async {
+  try {
+    final response = await _adminClient.auth.admin.listUsers();
+    
+    // Procura o usuário pelo email
+    for (final user in response) {
+      if (user.email == email) {
+        return user.id; // Retorna o UID se encontrar
+      }
     }
+    
+    return null; // Retorna null se não encontrar
+  } catch (e) {
+    return null; // Retorna null em caso de erro
   }
+}
 
   Future<void> deletarUsuario(String uid) async {
     try {
