@@ -33,4 +33,14 @@ class Script {
   String buscarEmpresa(String cnpj){
 return "SELECT * FROM {schema}.empresa WHERE cnpj = '$cnpj' LIMIT 1;";
 }
+
+String gerarInsertConfiguracao(String schema, Map<String, dynamic> dados) {
+  return '''
+    INSERT INTO ${schema}.configuracaogeral (uid, cnpj, schema)
+    VALUES (
+      '${dados['uid']}',
+      '${dados['cnpj']}',
+      '${dados['schema']}'
+    ) RETURNING id;''';
+}
 }

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:pedeaierpadm/controller/authService.dart';
+import 'package:pedeaierpadm/controller/configuracaoController.dart';
 import 'package:pedeaierpadm/controller/databaseService.dart';
 import 'package:pedeaierpadm/controller/empresaController.dart';
 import 'package:pedeaierpadm/controller/usuarioController.dart';
@@ -26,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   final Script _script = Script();
   Empresacontroller empresacontroller = Empresacontroller();
   Usuariocontroller usuariocontroller = Usuariocontroller();
+  ConfiguracaoController configuracaoController = ConfiguracaoController();
   final _cnpjCpfController = TextEditingController();
   final _nomeController = TextEditingController();
   final _fantasiaController = TextEditingController();
@@ -275,10 +277,19 @@ class _HomePageState extends State<HomePage> {
         'email': _emailEmpresaController.text.trim(),
         'schema': _schemaEmpresa!,
       });
-
+      if (emailExists == null) {
+        usuariocontroller.inserirUsuario(_schemaEmpresa!, {
+          'nome': _nomeUsuarioController.text.trim(),
+          'email': _emailUsuarioController.text.trim(),
+          'uid': uidUsuarioCadastrado,
+          'is_admin': true
+        });
+      }
       // Inserir usuário admin da empresa
-      usuariocontroller.inserirUsuario(_schemaEmpresa!, {'nome': _nomeUsuarioController.text.trim(), 'email': _emailUsuarioController.text.trim(), 'uid': uidUsuarioCadastrado, 'is_admin': true});
       _mostrarMensagem('Dados salvos com sucesso!', Colors.green);
+
+      configuracaoController.inserirConfiguracao('public', {'uid': uidUsuarioCadastrado, 'cnpj': documentoLimpo, 'schema': _schemaEmpresa});
+
       _limparDados();
     } catch (e) {
       // await _authService.deletarUsuario(uidUsuarioCadastrado);
