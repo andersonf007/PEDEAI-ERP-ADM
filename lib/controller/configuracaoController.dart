@@ -11,7 +11,15 @@ class ConfiguracaoController {
 
   Future<void> inserirConfiguracao(String schema, Map<String, dynamic> dados) async {
     try {
-      await _databaseService.executeSql(script.gerarInsertConfiguracao(schema, dados), schema: schema);
+      await _databaseService.executeSql(script.scriptInsertConfiguracao(schema, dados), schema: schema);
+    } catch (e) {
+      throw Exception('Erro ao salvar a configuração: ${e.toString()}');
+    }
+  }
+
+  Future<void> criarSchemaDaEmpresa(String schema) async {
+    try {
+      await _databaseService.executeSql(script.scriptCriarSchemaDaEmpresa(schema), schema: schema);
     } catch (e) {
       throw Exception('Erro ao salvar a configuração: ${e.toString()}');
     }

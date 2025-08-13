@@ -24,9 +24,17 @@ class Usuariocontroller {
     }
   }
 
-Future<void> inserirUsuario(String schema, Map<String, dynamic> dados) async {
+  Future<void> inserirUsuario(String schema, Map<String, dynamic> dados) async {
     try {
-      await _databaseService.executeSql(script.gerarInsertUsuario(schema, dados), schema: schema);
+      await _databaseService.executeSql(script.scriptInsertUsuario(dados), schema: schema);
+    } catch (e) {
+      throw Exception('Erro ao salvar usuário: ${e.toString()}');
+    }
+  }
+
+  Future<void> scriptInsertUsuarioDaEmpresa(String schema, Map<String, dynamic> dados) async {
+    try {
+      await _databaseService.executeSql(script.scriptInsertUsuarioDaEmpresa(dados), schema: schema);
     } catch (e) {
       throw Exception('Erro ao salvar usuário: ${e.toString()}');
     }

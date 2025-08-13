@@ -1,7 +1,7 @@
 class Script {
-  String gerarInsertEmpresa(String schema, Map<String, dynamic> dados) {
+  String scriptInsertEmpresa(String schema, Map<String, dynamic> dados) {
     return '''
-      INSERT INTO ${schema}.empresa 
+      INSERT INTO public.empresas 
       (cnpj, razao, fantasia, cep, logradouro, numero, bairro, municipio, uf, telefone, email, schema) 
       VALUES (
         '${dados['cnpj']}',
@@ -19,9 +19,9 @@ class Script {
       ) RETURNING id;''';
   }
 
-  String gerarInsertUsuario(String schema, Map<String, dynamic> dados) {
+  String scriptInsertUsuario(Map<String, dynamic> dados) {
     return '''
-    INSERT INTO ${schema}.usuario (nome, email, uid, is_admin)
+    INSERT INTO public.usuarios (nome, email, uid, is_admin)
     VALUES (
       '${dados['nome']}',
       '${dados['email']}',
@@ -30,17 +30,30 @@ class Script {
     ) RETURNING id;''';
   }
 
-  String buscarEmpresa(String cnpj){
-return "SELECT * FROM {schema}.empresa WHERE cnpj = '$cnpj' LIMIT 1;";
-}
+  String scriptInsertUsuarioDaEmpresa(Map<String, dynamic> dados) {
+    return '''
+    INSERT INTO public.usuarios_empresas (uid_usuario, id_empresa)
+    VALUES (
+      '${dados['uid']}',
+      '${dados['id_empresa']}'
+    ) RETURNING id;''';
+  }
 
-String gerarInsertConfiguracao(String schema, Map<String, dynamic> dados) {
-  return '''
+  String scriptBuscarEmpresa(String cnpj) {
+    return "SELECT * FROM public.empresas WHERE cnpj = '$cnpj' LIMIT 1;";
+  }
+
+  String scriptInsertConfiguracao(String schema, Map<String, dynamic> dados) {
+    return '''
     INSERT INTO ${schema}.configuracaogeral (uid, cnpj, schema)
     VALUES (
       '${dados['uid']}',
       '${dados['cnpj']}',
       '${dados['schema']}'
     ) RETURNING id;''';
-}
+  }
+
+  String scriptCriarSchemaDaEmpresa(String schema) {
+    return "SELECT public.criar_schema_empresa('$schema');";
+  }
 }

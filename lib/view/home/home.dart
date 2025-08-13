@@ -122,8 +122,8 @@ class _HomePageState extends State<HomePage> {
       // Verificar se a empresa já existe no banco
       final empresaExistente = await empresacontroller.buscarEmpresaNoBanco(cnpjLimpo, _schemaEmpresa!);
 
-      if (empresaExistente != null) {
-        _preencherDadosEmpresa(empresaExistente);
+      if (empresaExistente?['id'] != null) {
+        _preencherDadosEmpresa(empresaExistente!);
         _mostrarMensagem('Dados carregados do banco!', Colors.green);
         setState(() {
           _dadosPesquisados = true;
@@ -231,9 +231,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // Usar o schema definido no campo
       _schemaEmpresa = _schemaController.text.trim();
-
       String documentoLimpo = _cnpjCpfController.text.replaceAll(RegExp(r'[^\d]'), '');
 
       // Verificar se empresa já existe (apenas para CNPJ)
@@ -263,7 +261,7 @@ class _HomePageState extends State<HomePage> {
         uidUsuarioCadastrado = response2.user!.id;
       }
 
-      empresacontroller.inserirEmpresa(_schemaEmpresa!, {
+      List<Map<String, dynamic>> response = await empresacontroller.inserirEmpresa(_schemaEmpresa!, {
         'cnpj': documentoLimpo,
         'razao': _nomeController.text.trim(),
         'fantasia': _fantasiaController.text.trim(),
@@ -278,19 +276,16 @@ class _HomePageState extends State<HomePage> {
         'schema': _schemaEmpresa!,
       });
       if (emailExists == null) {
-        usuariocontroller.inserirUsuario(_schemaEmpresa!, {
-          'nome': _nomeUsuarioController.text.trim(),
-          'email': _emailUsuarioController.text.trim(),
-          'uid': uidUsuarioCadastrado,
-          'is_admin': true
-        });
+        await usuariocontroller.inserirUsuario(_schemaEmpresa!, {'nome': _nomeUsuarioController.text.trim(), 'email': _emailUsuarioController.text.trim(), 'uid': uidUsuarioCadastrado, 'is_admin': true});
       }
+      await usuariocontroller.scriptInsertUsuarioDaEmpresa(_schemaEmpresa!, {'uid': uidUsuarioCadastrado, 'id_empresa': response.first['id']});
       // Inserir usuário admin da empresa
+      
+
+      //configuracaoController.inserirConfiguracao('public', {'uid': uidUsuarioCadastrado, 'cnpj': documentoLimpo, 'schema': _schemaEmpresa});
+      //await configuracaoController.criarSchemaDaEmpresa(_schemaEmpresa!);
       _mostrarMensagem('Dados salvos com sucesso!', Colors.green);
-
-      configuracaoController.inserirConfiguracao('public', {'uid': uidUsuarioCadastrado, 'cnpj': documentoLimpo, 'schema': _schemaEmpresa});
-
-      _limparDados();
+      //_limparDados();
     } catch (e) {
       // await _authService.deletarUsuario(uidUsuarioCadastrado);
       _mostrarMensagem('Erro ao salvar dados: ${e.toString()}', Colors.red);

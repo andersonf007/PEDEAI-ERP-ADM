@@ -7,7 +7,35 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> executeSql(String sql, {Map<String, dynamic>? params, required String schema}) async {
     try {
       String finalSql = sql.replaceAll('{schema}', schema);
+      print(finalSql);
       final response = await _client.rpc('execute_sql', params: {'sql_query': finalSql, if (params != null) 'query_params': params});
+      if (response is List) {
+        if (response.isNotEmpty && response.first is int) {
+          return [
+            {'id': response.first},
+          ];
+        }
+        return List<Map<String, dynamic>>.from(response);
+      } else if (response is Map) {
+        return [Map<String, dynamic>.from(response)];
+      } else if (response == null) {
+        return [];
+      } else if (response.data['id'] == null) {
+        return [];
+      } else {
+        return [
+          {'id': response},
+        ];
+      }
+    } catch (e) {
+      throw Exception('Erro ao executar SQL: ${e.toString()}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> executeSql2(String sql, {Map<String, dynamic>? params, required String schema}) async {
+    try {
+      String finalSql = sql.replaceAll('{schema}', schema);
+      final response = await _client.rpc('execute_sql2', params: {'sql_query': finalSql, if (params != null) 'query_params': params});
       if (response is List) {
         if (response.isNotEmpty && response.first is int) {
           return [
