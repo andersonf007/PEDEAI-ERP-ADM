@@ -32,7 +32,7 @@ class Usuariocontroller {
     }
   }
 
-  Future<void> scriptInsertUsuarioDaEmpresa(String schema, Map<String, dynamic> dados) async {
+  Future<void> insertUsuarioDaEmpresa(String schema, Map<String, dynamic> dados) async {
     try {
       await _databaseService.executeSql(script.scriptInsertUsuarioDaEmpresa(dados), schema: schema);
     } catch (e) {

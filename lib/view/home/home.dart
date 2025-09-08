@@ -234,14 +234,13 @@ class _HomePageState extends State<HomePage> {
       _schemaEmpresa = _schemaController.text.trim();
       String documentoLimpo = _cnpjCpfController.text.replaceAll(RegExp(r'[^\d]'), '');
 
-      // Verificar se empresa já existe (apenas para CNPJ)
-      if (!_isCPF) {
+      
         final empresaExistente = await empresacontroller.buscarEmpresaNoBanco(documentoLimpo, _schemaEmpresa!);
         if (empresaExistente?['id'] != null) {
           _mostrarMensagem('Essa empresa já existe!', Colors.orange);
           return;
         }
-      }
+      
 
       // Verificar usuário
       /*final response = await _authService.signIn(email: _emailUsuarioController.text, password: _senhaController.text);
@@ -278,7 +277,7 @@ class _HomePageState extends State<HomePage> {
       if (emailExists == null) {
         await usuariocontroller.inserirUsuario(_schemaEmpresa!, {'nome': _nomeUsuarioController.text.trim(), 'email': _emailUsuarioController.text.trim(), 'uid': uidUsuarioCadastrado, 'is_admin': true});
       }
-      await usuariocontroller.scriptInsertUsuarioDaEmpresa(_schemaEmpresa!, {'uid': uidUsuarioCadastrado, 'id_empresa': response.first['id']});
+      await usuariocontroller.insertUsuarioDaEmpresa(_schemaEmpresa!, {'uid': uidUsuarioCadastrado, 'id_empresa': response.first['id']});
       // Inserir usuário admin da empresa
       
 
