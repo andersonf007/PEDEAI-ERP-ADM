@@ -1,4 +1,4 @@
-package com.example.pedeaierpadm
+package br.com.unifortesistemas.pedeaierpadm
 
 import io.flutter.embedding.android.FlutterActivity
 
